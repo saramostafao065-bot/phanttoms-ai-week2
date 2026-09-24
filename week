@@ -1,0 +1,49 @@
+import sqlite3
+import requests
+
+url = "https://jsonplaceholder.typicode.com/posts"
+response = requests.get(url)
+
+data = response.json()
+
+extracted_data = []
+for item in data[:5]:
+  extracted_item = {
+      "id": item.get("id"),
+      "title": item.get("title"),
+      "body": item.get("body"),
+  }
+  extracted_data.append(extracted_item)
+
+db_name = "store.db"
+conn = sqlite3.connect(db_name)
+cursor = conn.cursor()
+
+cursor.execute("""
+    CREATE TABLE IF NOT EXISTS products (
+        id INTEGER PRIMARY KEY,
+        title TEXT,
+        body TEXT
+    )
+""")
+conn.commit()
+
+for item in extracted_data:
+  cursor.execute(
+      """
+        INSERT OR IGNORE INTO products (id, title, body)
+        VALUES (?, ?, ?)
+    """,
+      (item["id"], item["title"], item["body"]),
+  )
+conn.commit()
+
+cursor.execute("SELECT id, title FROM products WHERE id <= 3")
+for row in cursor.fetchall():
+  pass
+
+cursor.execute("SELECT id, title FROM products ORDER BY id DESC")
+for row in cursor.fetchall():
+  pass
+
+conn.close()
